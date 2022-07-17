@@ -46,8 +46,8 @@ async def on_ready():
 async def profile(ctx : commands.Context): 
     
     name = ctx.message.author # Получаем участника
-    icon = name.avatar_url # Получаем аватарку участника
-
+    icon = name.avatar.url # Получаем аватарку участника
+    
     # Помещаем все роли в строку
     author_roles = ''
     i = 1
@@ -189,7 +189,7 @@ async def serverinfo(ctx):
     owner = str(ctx.guild.owner)
     id = str(ctx.guild.id)
     memberCount = str(ctx.guild.member_count)
-    icon = str(ctx.guild.icon_url)
+    icon = str(ctx.guild.icon.url)
 
     # Создаём embed для вывода
     embed = discord.Embed(
