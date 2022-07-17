@@ -1,0 +1,64 @@
+
+{
+    "profile": {
+    "name": "profile",
+    "description": "Выводит информацию о профиле: имя пользователя, его аватарка, список ролей",
+    "help": "profile",
+    "aliases": ["profile"]
+    },
+
+    "game": {
+        "name": "game",
+        "description": "С вероятностью 33% процента пользователь выигрывает и получает соответствуещее сообщение",
+        "help": "game",
+        "aliases": ["game"]
+    },
+
+    "stats": {
+        "name": "stats",
+        "description": "Выводит статистику по результату игр",
+        "help": "stats",
+        "aliases": ["stats"]
+    },
+
+    "hello": {
+        "name": "hello",
+        "description": "Приветствует пользователя",
+        "help": "hello",
+        "aliases": ["hello"]
+    },
+
+    "translate": {
+        "name": "translate",
+        "description": "Переводит текст с любого языка на русский, либо на английский, если изначальный текст был на русском",
+        "help": "translate <текст>",
+        "aliases": ["translate", "trnslt", "перевод", "tr"]
+    },
+
+    "google_search": {
+        "name": "google",
+        "description": "Ищет запрос пользователя в Гугле, и возвращает 3 первых ссылки из выдачи",
+        "help": "google <текст>",
+        "aliases": ["gs", "google"]
+    },
+
+    "repeat": {
+        "name": "repeat",
+        "description": "Повторяет сообщение пользователя",
+        "help": "repeat <текст>",
+        "aliases": ["repeat"]
+    },
+
+    "serverinfo": {
+        "name": "serverinfo",
+        "description": "Выводит информацию о сервере",
+        "help": "serverinfo",
+        "aliases": ["serverinfo"]
+    },
+    "rename": {
+        "name": "rename",
+        "description": "Выводит информацию о сервере",
+        "help": "rename @ИмяПользователя <Новое имя>",
+        "aliases": ["rename"]
+    }
+}
