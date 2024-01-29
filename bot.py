@@ -1,8 +1,11 @@
 import json
 from googletrans import Translator
 from googlesearch import search
+import re
 import random
 import discord
+import lyricsgenius
+from lyricsgenius import song
 from datetime import timedelta
 from discord.ext import commands
 from config import settings
@@ -10,6 +13,8 @@ from config import settings
 bot = commands.Bot(intents = discord.Intents.all(), command_prefix = settings['prefix'])
 
 data = {} # Cловарь с данными о кол-ве игр и побед для каждого участика сервера  
+
+genius = lyricsgenius.Genius(settings['genius_token'])
 
 #========= Загрузка информации о командах ============
 bot_commands = {} # Словарь с командами для бота
@@ -101,6 +106,94 @@ async def stats(ctx):
     await ctx.reply(embed = emb)    # Отвечаем на сообщение пользователя с embed со статистикой
 #====================================================================
 
+#======================= Команда !songsof ============================
+# Reply with top 3 artist song
+@bot.command(help = command_description['songsof'])
+async def songsof(ctx, *, args):
+
+    
+
+    
+    artist = genius.search_artist(args, max_songs=3)
+    songs = artist.songs
+    res = []
+    for song in songs:
+        res.append(song.title)
+    await ctx.reply(str(res))   
+#====================================================================
+    
+#======================= Команда !lyrics ============================
+# Reply with lyrics of song by artist and title
+@bot.command(help = command_description['lyrics'])
+async def lyrics(ctx, *, args):
+    splitted = args.split(",")
+    print(splitted)
+    artist_name = splitted[0]
+    song_name = splitted[1]
+    song = genius.search_song(song_name, artist_name)
+    # Создаём embed
+    emb = discord.Embed(
+        title = f'{song.title} by {song.artist}'
+    )
+    emb.set_thumbnail(url=song.header_image_thumbnail_url)
+    lyrics = song.lyrics
+
+    # cut start garbage
+    lyrics = lyrics[lyrics.find("["):]
+
+    m = re.findall("\d+Embed", lyrics)
+    lyrics = lyrics.replace(m[0], '')
+    lyrics = lyrics.split("\n\n")
+    print(lyrics)
+    
+    for para in lyrics:
+        if len(para) > 1:
+            emb.add_field(name="", value = para)   # Создаём в embed поля с количеством игр и побед
+    
+    await ctx.reply(embed = emb)   
+
+
+@lyrics.error
+async def lyrics_error(ctx, error):
+    print(error)
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.reply('Отсутствуют аргументы!\nИспользование: ' + settings['prefix'] + bot_commands['lyrics']['help'])
+    else:
+        await ctx.reply('Что-то пошло не так :worried:')
+#====================================================================
+
+#======================= Команда !cover ============================
+# Reply with album cover by artist and album title
+@bot.command(help = command_description['cover'])
+async def cover(ctx, *, args):
+    if "," in args:
+        splitted = args.split(",")
+        print(splitted)
+        artist_name = splitted[0]
+        album_name = splitted[1]
+        album = genius.search_album(album_name, artist_name)
+    else:
+        album = genius.search_album(name=args)
+    # Создаём embed
+    emb = discord.Embed(
+        title = f'{album.name} by {album.artist.name}'
+    )
+    emb.set_image(url=album.cover_art_url)
+    await ctx.reply(embed = emb)   
+
+
+@cover.error
+async def cover(ctx, error):
+    print(error)
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.reply('Отсутствуют аргументы!\nИспользование: ' + settings['prefix'] + bot_commands['lyrics']['help'])
+    elif isinstance(error, AttributeError):
+        await ctx.reply('Не найдено! :face_with_monocle:')
+    else:
+        await ctx.reply('Что-то пошло не так :worried:')
+#====================================================================
+
+
 
 #======================= Команда !hello =============================
 # Бот приветствует пользователя
@@ -116,19 +209,24 @@ async def hello(ctx):
 @bot.command(aliases = ['trnslt', 'перевод', 'tr'], help = command_description['translate'])
 async def translate(ctx, *, text):
 
+    message = await ctx.send(":mag: Перевод...")
+    # Используем библиотеку googlesearch
+     
     translator = Translator() # Используется библиотека googletrans
 
     detected = translator.detect(text) # Определяем исходный язык
-
+    for lang in detected:
+       print(lang.lang, lang.confidence)
     # Выбираем целевой язык
-    if detected.lang == 'ru':
+    if detected[0].lang == 'ru':
         dest = 'en'
     else:
         dest = 'ru'
     
     result = translator.translate(text, dest=dest) # Переводим, сохраняем результат
 
-    await ctx.reply(result.text) # Выводим результат
+    await message.edit(content=result.text)
+    # await ctx.reply(result.text) # Выводим результат
 
 @translate.error
 async def translate_error(ctx, error):
@@ -143,7 +241,9 @@ async def translate_error(ctx, error):
 async def google_search(ctx, *, args):
     message = await ctx.send(":mag: Ищем...")
     # Используем библиотеку googlesearch
-    res = search(args, num=3) # Ищем 3 страницы по запросу. search() возвращает генератор
+    print(args)
+    res = search(args, num_results=3) # Ищем 3 страницы по запросу. search() возвращает генератор
+    print(res)
     await message.edit(content="Найдено!")
     for _ in range(3):
         await ctx.send(res.__next__()) # Выводим поочереди все результаты. __next__() неоходим для итерации по генератору
@@ -174,7 +274,7 @@ async def repeat_error(ctx, error):
 # НЕ ПРОВЕРЕНО
 @bot.event
 async def on_member_join(member): 
-    role = discord.utils.get(member.guild.roles, name="Подопотные")  
+    role = discord.utils.get(member.guild.roles, name="Проветривающие")  
     await member.add_roles(role)
 #=========================================================================
 
@@ -219,61 +319,5 @@ async def rename_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.reply('Отсутствуют аргументы!\nИспользование: ' + settings['prefix'] + bot_commands['rename']['help'])
 #========================================================================
-
-
-
-#========================================================================
-#                           НА ДОРАБОТКЕ                                =
-#========================================================================
-
-# @bot.command()
-# @commands.has_permissions(moderate_members = True)
-# async def mute(ctx : commands.Context, member : discord.Member, until, *, reason):
-
-#     if ctx.message.author == member:    # Попытка замутить самого себя
-#         await ctx.send(':x: Вы не можете замутить сами себя!')
-#         return
-
-#     if member == ctx.me:      # Попытка замутить бота
-#         await ctx.send(':cry: Без меня станет душновато')
-#         return
-#     delta = timedelta(minutes=until)
-#     try:
-#         member.edit
-#         await member.timeout(until = delta, reason = reason)
-#         print('Done')
-#     except discord.Forbidden as e:
-#         print(f'Forbidden: status:  {e.status}\t  text : {e.text}\t code: {e.code}')
-#     except discord.HTTPException as e:
-#         print(f'HTTP: status:  {e.status}\t  text : {e.text}\t code: {e.code} ')
-#     except TypeError:
-#         print('TypeError')
-#     # roles = member.roles
-#     # print(roles)
-#     # mutedRole = discord.utils.get(ctx.guild.roles, name="Muted") # Поиск роли по названию "Muted"
-#     # try:
-#     #     await member.edit(roles = [mutedRole])  # Попытка выдать роль через member.edit
-#     #     print('Muted succesfully')
-#     # except discord.Forbidden as e:
-#     #     print(f'Forbidden: status:  {e.status}\t  text : {e.text}\t code: {e.code}')
-#     # except discord.HTTPException as e:
-#     #     print(f'HTTP: status:  {e.status}\t  text : {e.text}\t code: {e.code} ')
-#     # except TypeError:
-#     #     print('TypeError')
-
-#     # try:
-#     #     await member.add_roles(mutedRole) # Попытка выдать роль через member.add_roles
-#     #     print('Muted succesfully')
-#     # except discord.Forbidden as e:
-#     #     print(f'Forbidden: status:  {e.status}\t  text : {e.text}\t code: {e.code}')
-#     # except discord.HTTPException as e:
-#     #     print(f'HTTP: status:  {e.status}\t  text : {e.text}\t code: {e.code} ')
-
-
-# @mute.error
-# async def mute_error(ctx, error):
-#     if isinstance(error, commands.MissingPermissions):
-#         await ctx.send('У вас недостаточно прав, чтобы мутить участников')
-
 
 bot.run(settings['token'])

@@ -55,6 +55,27 @@
         "help": "serverinfo",
         "aliases": ["serverinfo"]
     },
+
+    "lyrics": {
+        "name": "lyrics",
+        "description": "Выводит текст песни по имени исполнителя и названию, указанными, через запятую",
+        "help": "lyrics bjork, pagan poetry",
+        "aliases": ["lyrics"]
+    },
+
+    "songsof": {
+        "name": "songsof",
+        "description": "Выводит топ 3 песни исполнителя",
+        "help": "songsof bjork",
+        "aliases": ["songsof"]
+    },
+    "cover": {
+        "name": "cover",
+        "description": "Выводит обложку",
+        "help": "cover bjork, debut",
+        "aliases": ["cover"]
+    },
+    
     "rename": {
         "name": "rename",
         "description": "Выводит информацию о сервере",
